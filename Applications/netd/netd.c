@@ -532,10 +532,24 @@ int dokernel( void )
 				ne.data = get_map(); /* becomes lcn */
 				map[ne.data].len = 0;
 				map[ne.data].socketn = sm.s.s_num;
+				if (sm.s.s_type == SOCKTYPE_UDP){
+					struct uip_udp_conn *conptr;
+					conptr = uip_udp_new(NULL, 0);
+					if (!conptr){
+						ne.data = SS_CLOSED;
+						ne.ret = ENOMEM;  /*fixme: should be ENOBUFS */
+						ksende(NE_NEWSTATE);
+						break;
+					}
+					map[ne.data].conn = (struct uip_conn *)conptr;
+					map[ne.data].lcn = ne.data;
+					conptr->appstate = ne.data;
+				}
 				ksend( NE_INIT );
 				break;
 			case SS_BOUND:
-				/* FIXME: probably needs to do something here  */
+				if (sm.s.s_type == SOCKTYPE_UDP)
+					m->conn->lport = UIP_HTONS( sm.s.s_addr[SADDR_SRC].port);
 				ne.data = SS_BOUND;
 				ksend( NE_NEWSTATE );
 				break;
@@ -564,20 +578,9 @@ int dokernel( void )
 					break;
 				}
 				else if ( sm.s.s_type == SOCKTYPE_UDP ){
-					struct uip_udp_conn *conptr;
-					uip_ipaddr_t addr;
-					int port = sm.s.s_addr[SADDR_DST].port;
-					uip_ipaddr_copy( &addr, (uip_ipaddr_t *)
-							 &sm.s.s_addr[SADDR_DST].addr );
-					/* need some HTONS'ing done here? */
-					conptr = uip_udp_new( &addr, port );
-					if ( !conptr ){
-						break; /* fixme: actually handler the error */
-					}
-					m->conn = ( struct uip_conn *)conptr; /* fixme: needed? */
-					m->lcn = conptr->appstate = sm.sd.lcn;
-					/* fixme: assign local address/port !!! */
-					/* refactor: same as tcp action from connect event */
+					m->conn->rport = UIP_HTONS(sm.s.s_addr[SADDR_DST].port);
+					uip_ipaddr_copy( &m->conn->ripaddr, (uip_ipaddr_t *)
+							 &sm.s.s_addr[SADDR_DST].addr);
 					ne.data = SS_CONNECTED;
 					ksend( NE_NEWSTATE );
 					break;
