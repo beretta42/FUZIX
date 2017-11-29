@@ -3,8 +3,8 @@
 #include <string.h>
 #include <syscalls.h>
 
-ssize_t sendto(int fd, void *buf, size_t len, int flags, struct sockaddr *addr,
-    socklen_t addr_len)
+ssize_t sendto(int fd, const void *buf, size_t len, int flags, 
+	       const struct sockaddr *addr, socklen_t addr_len)
 {
     struct _sockio tmp;
     tmp.sio_flags = flags;
