@@ -16,7 +16,7 @@ ssize_t recvfrom(int fd, void *buf, size_t len, int flags, struct sockaddr *addr
             tmp.sio_addr_len = *addr_len;
     }
     err = _recvfrom(fd, buf, len, &tmp);
-    if (err == 0 && tmp.sio_addr_len) {
+    if (err > 0 && tmp.sio_addr_len) {
         memcpy(addr, tmp.sio_addr, tmp.sio_addr_len);
         if (addr_len)
             *addr_len = tmp.sio_addr_len;
