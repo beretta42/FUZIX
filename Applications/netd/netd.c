@@ -556,12 +556,8 @@ int dokernel( void )
 				ksend( NE_INIT );
 				break;
 			case SS_BOUND:
-				if (sm.s.s_type == SOCKTYPE_UDP){
+				if (sm.s.s_type == SOCKTYPE_UDP)
 					m->conn->lport = UIP_HTONS( sm.s.s_addr[SADDR_SRC].port);
-					ne.data = SS_CONNECTED;
-					ksend(NE_NEWSTATE);
-					break;
-				}
 				ne.data = SS_BOUND;
 				ksend( NE_NEWSTATE );
 				break;
