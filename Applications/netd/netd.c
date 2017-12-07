@@ -412,6 +412,14 @@ void netd_udp_appcall(void)
 		uint16_t len = uip_datalen();
 		char *ptr = uip_appdata;
 		uint32_t base = ne.socket * RINGSIZ * 2;
+		struct uip_tcpip_hdr *addr =  
+		    (struct uip_udpip_hdr *)&uip_buf[UIP_LLH_LEN];
+
+		/* send remote address to kernel */
+		ne.data = SADDR_TMP;
+		uip_ipaddr_copy((uip_ipaddr_t *)&ne.info.addr.addr, &addr->srcipaddr);
+		ne.info.addr.port = addr->srcport;
+		ksend(NE_SETADDR);
 
 		if ( (s->rend + 1)&(NSOCKBUF-1) == s->rstart )
 			return; /* full - drop it */
@@ -548,8 +556,12 @@ int dokernel( void )
 				ksend( NE_INIT );
 				break;
 			case SS_BOUND:
-				if (sm.s.s_type == SOCKTYPE_UDP)
+				if (sm.s.s_type == SOCKTYPE_UDP){
 					m->conn->lport = UIP_HTONS( sm.s.s_addr[SADDR_SRC].port);
+					ne.data = SS_CONNECTED;
+					ksend(NE_NEWSTATE);
+					break;
+				}
 				ne.data = SS_BOUND;
 				ksend( NE_NEWSTATE );
 				break;
